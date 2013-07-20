@@ -1,0 +1,32 @@
+Dirs to backup:
+
+- documents (<9GB)
+- the-archive (7.2GB, probably won't change)
+- photo (33GB, may grow)
+- projects (11GB, won't change a lot)
+- books (6GB)
+
+- archive with keys (<1MB)
+
+- images (6GB, ?)
+
+*** Sum: 66.2-72.2 GB, cost $0.70, time to transfer 2.6 hours @ 100 Mbps
+
+
+
+Proposed scheme:
+
+Backup modularly, by dirs. Manually set the list! Python script should
+process only an archive which should be prepared by shell script (also
+process the list of dirs to backup).
+
+
+Python script:
+
+- upload of an archive
+- notification of download
+- deletion of archive
+
+Options:
+
+{-u | -n | -d | -r} filename/archive id/job id
