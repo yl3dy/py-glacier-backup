@@ -1,38 +1,38 @@
 #!/usr/bin/python2
 
+"""Amazon Glacier backup management tool."""
+
 from credentials import *
 from argparse import ArgumentParser
 from time import strftime
-from boto.glacier.layer1 import Layer1
-from boto.glacier.concurrent import ConcurrentUploader
-import json
+from boto.glacier.layer2 import Layer2
+from boto.glacier.concurrent import ConcurrentDownloader
 
-UPLOAD_CHUNK_SIZE = 32  # MB
+CHUNK_SIZE = 32  # MB
+MB = 1024 * 1024
 
-def upload(connection, filename):
+def upload(vault, filename):
     """Upload a file."""
     desc = '{}, uploaded at {}'.format(filename, strftime('%Y-%m-%d'))
-    return ConcurrentUploader(connection, VAULT_NAME,
-                              UPLOAD_CHUNK_SIZE*1024*1024).upload(filename,
-                                                                  filename)
+    return vault.concurrent_create_archive_from_file(filename, desc,
+                                                     part_size=CHUNK_SIZE*MB)
 
-def notify_download(archive_id):
+def notify_download(vault, archive_id):
     """Notify Glacier about backup download."""
-    request_info = {'ArchiveId': archive_id, 'Format': 'JSON',
-                    'Type': 'archive-retrieval'}
-    return str(connection.initiate.job(VAULT_NAME, request_info))
+    return vault.retrieve_archive(archive_id).get_output()
 
-def download(connection, job_id):
-    """Actually download an archive from Glacier."""
-    return connection.get_job_output(VAULT_NAME, job_id)
+def download(vault, job_id, filename='archive.tar.gz.gpg'):
+    """Actually download the archive from Glacier."""
+    download_job = vault.get_job(job_id)
+    return ConcurrentDownloader(download_job, CHUNK_SIZE*MB).download(filename)
 
-def remove(connection, archive_id):
+def remove(vault, archive_id):
     """Remove an archive from Glacier."""
-    return connection.delete_archive(VAULT_NAME, archive_id)
+    return vault.delete_archive(VAULT_NAME, archive_id)
 
-def list_jobs(connection):
+def list_jobs(vault):
     """List all jobs on Glacier."""
-    return connection.list_jobs(VAULT_NAME)
+    return vault.list_jobs(VAULT_NAME)
 
 def main():
     """Main routine."""
@@ -44,26 +44,26 @@ def main():
     group.add_argument('--download', type=str, metavar='JOB_ID',
                        help='actually download archive')
     group.add_argument('--remove', type=str, metavar='ARCHIVE_ID')
+    parser.add_argument('--download-to', type=str)
     args = parser.parse_args()
 
-    #connection = Layer1(aws_access_key=AMAZON_LOGIN,
-    #                    aws_secret_access_key=AMAZON_PASSWORD)
-    connection = None
+    vault = Layer2(aws_access_key_id=AMAZON_LOGIN,
+                   aws_secret_access_key=AMAZON_PASSWORD,
+                   region_name='eu-west-1').get_vault(VAULT_NAME)
 
     if args.notify:
-        print('{}: job {}'.format(args.entity_id,
-                                  download(connection, args.entity_id)))
+        print('Job {}'.format(notify_download(vault, args.notify)))
     elif args.download:
-        print('Download checksum: {}'.format(download(connection,
-                                                      args.entity_id)))
+        print('Download checksum: {}'.format(download(vault,
+                                                      args.download,
+                                                      args.download_to)))
     elif args.remove:
-        remove(connection, args.entity_id)
-        print('Removed archive {}'.format(args.entity_id))
+        remove(vault, args.remove)
+        print('Removed archive {}'.format(args.remove))
     elif args.upload:
-        print('{}: {}'.format(args.entity_id, upload(connection,
-                                                     args.entity_id)))
+        print('{}: {}'.format(args.upload, upload(vault, args.upload)))
     else:
-        print(list_jobs(connection))
+        print(list_jobs(vault))
 
 if __name__ == '__main__':
     main()

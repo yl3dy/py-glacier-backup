@@ -1,32 +1,27 @@
-Dirs to backup:
+Amazon Glacier backup script
 
-- documents (<9GB)
-- the-archive (7.2GB, probably won't change)
-- photo (33GB, may grow)
-- projects (11GB, won't change a lot)
-- books (6GB)
+Features:
 
-- archive with keys (<1MB)
+- uploading, downloading, removing an archive to/from Amazon Glacier;
+- wrapper script to form encrypted archive and upload it.
 
-- images (6GB, ?)
+For uploading an archive to Glacier, use cold_backup.sh (help in comments).
+For retrieval and removal, use glacier_backup.py directly.
 
-*** Sum: 66.2-72.2 GB, cost $0.70, time to transfer 2.6 hours @ 100 Mbps
+Always remember to save inventory (i.e., IDs of uploaded archives)! By default
+cold_backup.sh appends IDs to special file $INVENTORY.
 
+Configuration:
 
+Create credentials.py, where set variables AMAZON_LOGIN (your Amazon key id),
+AMAZON_PASSWORD (Amazon secret key) and VAULT_NAME. Also you're likely to
+change paths in cold_backup.sh.
 
-Proposed scheme:
+Dependencies:
 
-Backup modularly, by dirs. Manually set the list! Python script should
-process only an archive which should be prepared by shell script (also
-process the list of dirs to backup).
+Python 2.7
+boto
+bash
+GnuPG
 
-
-Python script:
-
-- upload of an archive
-- notification of download
-- deletion of archive
-
-Options:
-
-{-u | -n | -d | -r} filename/archive id/job id
+Copyleft 2013 by Alexander Kiselyov, license GPLv3+.
