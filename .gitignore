@@ -3,3 +3,4 @@ credentials.py
 tmp/*
 *.vim
 local/*
+inventory
