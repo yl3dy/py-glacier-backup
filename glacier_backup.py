@@ -28,7 +28,7 @@ def download(vault, job_id, filename='archive.tar.gz.gpg'):
 
 def remove(vault, archive_id):
     """Remove an archive from Glacier."""
-    return vault.delete_archive(VAULT_NAME, archive_id)
+    return vault.delete_archive(archive_id)
 
 def list_jobs(vault):
     """List all jobs on Glacier."""
